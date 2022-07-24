@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32714.290
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Functions.SourceGen", "Functions.SourceGen\Functions.SourceGen.csproj", "{B704062A-8EE7-44A6-9C8F-631669BFC494}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Functions.SourceGen", "src\Functions.SourceGen\Functions.SourceGen.csproj", "{B704062A-8EE7-44A6-9C8F-631669BFC494}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Functions", "Functions\Functions.csproj", "{7E20B286-2515-4271-BF57-1BB04B350933}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Functions", "src\Functions\Functions.csproj", "{7E20B286-2515-4271-BF57-1BB04B350933}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Functions.SourceGen.Tests", "Functions.SourceGen.Tests\Functions.SourceGen.Tests.csproj", "{74F04AA9-5E2D-474B-AF4E-F4CF202890BC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Functions.SourceGen.Tests", "src\Functions.SourceGen.Tests\Functions.SourceGen.Tests.csproj", "{74F04AA9-5E2D-474B-AF4E-F4CF202890BC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
