@@ -19,13 +19,13 @@ public sealed class FunctionGenerator : IIncrementalGenerator
             )
         );
 
-        var enumDeclarations = context.SyntaxProvider
+        var classDeclarations = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (s, _) => IsSyntaxTargetForGeneration(s), // select classes with attributes
                 transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx) // sect the class with the [FunctionSourceGenAttribute] attribute
             ).Where(static m => m is not null)!; // filter out attributed classes that we don't care about
 
-        var compilationAndEnums = context.CompilationProvider.Combine(enumDeclarations.Collect());
+        var compilationAndEnums = context.CompilationProvider.Combine(classDeclarations.Collect());
 
         context.RegisterSourceOutput(compilationAndEnums, static (spc, source) => Execute(source.Item1, source.Item2!, spc));
     }

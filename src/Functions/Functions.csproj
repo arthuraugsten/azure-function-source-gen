@@ -23,9 +23,5 @@
 	<ItemGroup>
 		<ProjectReference Include="..\Functions.SourceGen\Functions.SourceGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Services\" />
-	</ItemGroup>
 	
 </Project>
