@@ -1,19 +1,17 @@
-﻿namespace Functions.SourceGen;
+﻿namespace Functions.SourceGen.Functions;
 
 public readonly struct FunctionInfo
 {
-    public FunctionInfo(string serviceNamespace, string name, string @namespace, string serviceName, string serviceInterface)
+    public FunctionInfo(string serviceNamespace, string name, string @namespace, string serviceName)
     {
         ServiceNamespace = serviceNamespace;
         Name = name;
         Namespace = @namespace;
         ServiceName = serviceName;
-        ServiceInterface = serviceInterface;
     }
 
     public readonly string ServiceNamespace;
     public readonly string Name;
     public readonly string Namespace;
     public readonly string ServiceName;
-    public readonly string ServiceInterface;
 }

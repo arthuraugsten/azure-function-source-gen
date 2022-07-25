@@ -2,5 +2,5 @@ using Functions.SourceGen.Attributes;
 
 namespace Functions.Samples;
 
-[FunctionSourceGen]
+[FunctionSourceGen(ServiceNamespace = "Functions.ApplicationService.Services")]
 public partial class CategoryFunction { }

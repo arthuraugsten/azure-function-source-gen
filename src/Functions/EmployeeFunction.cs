@@ -2,6 +2,6 @@ using Functions.SourceGen.Attributes;
 
 namespace Functions;
 
-[FunctionSourceGen]
+[FunctionSourceGen(ServiceNamespace = "Functions.ApplicationService.Services")]
 public partial class EmployeeFunction
 { }

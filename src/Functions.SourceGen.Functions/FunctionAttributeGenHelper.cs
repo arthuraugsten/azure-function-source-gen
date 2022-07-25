@@ -1,6 +1,6 @@
-﻿namespace Functions.SourceGen.Attributes;
+﻿namespace Functions.SourceGen.Functions;
 
-internal static class AttributeGenHelper
+internal static class FunctionAttributeGenHelper
 {
     internal const string NameSpace = "Functions.SourceGen.Attributes";
     internal const string AttributeName = "FunctionSourceGenAttribute";
@@ -8,7 +8,7 @@ internal static class AttributeGenHelper
     internal const string ServiceNamespacePropertyName = "ServiceNamespace";
 
 
-    internal const string AttributeSourceCode = 
+    internal const string AttributeSourceCode =
 @$"namespace {NameSpace};
 
 [System.AttributeUsage(System.AttributeTargets.Class)]

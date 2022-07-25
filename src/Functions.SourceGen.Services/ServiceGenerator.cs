@@ -1,28 +1,27 @@
-﻿using Functions.SourceGen.Attributes;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using System.Collections.Immutable;
 using System.Text;
 
-namespace Functions.SourceGen;
+namespace Functions.SourceGen.Services;
 
 [Generator]
-public sealed class FunctionGenerator : IIncrementalGenerator
+public sealed class ServiceGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         context.RegisterPostInitializationOutput(ctx =>
             ctx.AddSource(
-                $"{AttributeGenHelper.AttributeName}.g.cs",
-                SourceText.From(AttributeGenHelper.AttributeSourceCode, Encoding.UTF8)
+                $"{ServiceAttributeGenHelper.AttributeName}.g.cs",
+                SourceText.From(ServiceAttributeGenHelper.AttributeSourceCode, Encoding.UTF8)
             )
         );
 
         var classDeclarations = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (s, _) => IsSyntaxTargetForGeneration(s), // select classes with attributes
-                transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx) // sect the class with the [FunctionSourceGenAttribute] attribute
+                transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx) // sect the class with the [ServicesSourceGenAttribute] attribute
             ).Where(static m => m is not null)!; // filter out attributed classes that we don't care about
 
         var compilationAndEnums = context.CompilationProvider.Combine(classDeclarations.Collect());
@@ -46,7 +45,7 @@ public sealed class FunctionGenerator : IIncrementalGenerator
                 var attributeContainingTypeSymbol = attributeSymbol.ContainingType;
                 var fullName = attributeContainingTypeSymbol.ToDisplayString();
 
-                if (fullName == AttributeGenHelper.FullName)
+                if (fullName == ServiceAttributeGenHelper.FullName)
                     return classDeclarationSyntax;
             }
         }
@@ -67,21 +66,18 @@ public sealed class FunctionGenerator : IIncrementalGenerator
 
         foreach (var function in functionsToGenerate)
         {
-            var functionSourceCode = GenerateFunctionsClass(function);
-            context.AddSource($"{function.Name}.g.cs", SourceText.From(functionSourceCode, Encoding.UTF8));
-
-            var serviceSourceCode = GenerateServiceClass(function);
-            context.AddSource($"{function.ServiceName}.g.cs", SourceText.From(serviceSourceCode, Encoding.UTF8));
+            var serviceSourceCode = GenerateServiceInterface(function);
+            context.AddSource($"{function.Name}.g.cs", SourceText.From(serviceSourceCode, Encoding.UTF8));
         }
 
         var dependencyInjection = GenerateDependencyInjection(functionsToGenerate);
         context.AddSource("DependencyInjection.g.cs", SourceText.From(dependencyInjection, Encoding.UTF8));
     }
 
-    private static List<FunctionInfo> GetTypesToGenerate(Compilation compilation, IEnumerable<ClassDeclarationSyntax> functions, CancellationToken ct)
+    private static List<ServiceInfo> GetTypesToGenerate(Compilation compilation, IEnumerable<ClassDeclarationSyntax> functions, CancellationToken ct)
     {
-        var functionsToGenerate = new List<FunctionInfo>();
-        var functionAttribute = compilation.GetTypeByMetadataName(AttributeGenHelper.FullName);
+        var functionsToGenerate = new List<ServiceInfo>();
+        var functionAttribute = compilation.GetTypeByMetadataName(ServiceAttributeGenHelper.FullName);
 
         if (functionAttribute is null)
             return functionsToGenerate;
@@ -94,8 +90,6 @@ public sealed class FunctionGenerator : IIncrementalGenerator
             if (semanticModel.GetDeclaredSymbol(classDeclarationSyntax) is not INamedTypeSymbol classSymbol)
                 continue;
 
-            var serviceName = $"{classSymbol.Name.Substring(0, classSymbol.Name.IndexOf("Function"))}Service";
-            var serviceInterface = $"I{serviceName}";
             var serviceNamespace = classSymbol.ContainingNamespace.ToDisplayString();
 
             foreach (var attributeData in classSymbol.GetAttributes())
@@ -105,7 +99,7 @@ public sealed class FunctionGenerator : IIncrementalGenerator
 
                 foreach (var namedArgument in attributeData.NamedArguments)
                 {
-                    if (namedArgument.Key == AttributeGenHelper.ServiceNamespacePropertyName && namedArgument.Value.Value?.ToString() is { } n)
+                    if (namedArgument.Key == ServiceAttributeGenHelper.ServiceNamespacePropertyName && namedArgument.Value.Value?.ToString() is { } n)
                         serviceNamespace = n;
                 }
 
@@ -113,12 +107,9 @@ public sealed class FunctionGenerator : IIncrementalGenerator
             }
 
             functionsToGenerate.Add(
-                new FunctionInfo(
-                    serviceNamespace,
+                new ServiceInfo(
                     classSymbol.Name,
-                    classSymbol.ContainingNamespace.ToDisplayString(),
-                    serviceName,
-                    serviceInterface
+                    serviceNamespace
                 )
             );
         }
@@ -126,51 +117,14 @@ public sealed class FunctionGenerator : IIncrementalGenerator
         return functionsToGenerate;
     }
 
-    private static string GenerateFunctionsClass(FunctionInfo functionInfo)
-    {
-        var source =
-@$"using System;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Host;
-using Microsoft.Extensions.Logging;
-
-namespace {functionInfo.Namespace};
-
-public partial class {functionInfo.Name}
-{{ 
-    private readonly ILogger<{functionInfo.Name}> _logger;
-    private readonly {functionInfo.ServiceNamespace}.I{functionInfo.ServiceName} _service;
-
-    public {functionInfo.Name}(ILogger<{functionInfo.Name}> logger, {functionInfo.ServiceNamespace}.I{functionInfo.ServiceName} service)
-    {{
-        _logger = logger;
-        _service = service;
-    }}
-
-    [FunctionName(""{functionInfo.Name}"")]
-    public void Run([QueueTrigger(""myqueue-items"")]string myQueueItem)
-    {{
-        _logger.LogInformation($""C# Queue trigger function processed: {{myQueueItem}}"");
-    }}
-
-    [FunctionName(""{functionInfo.Name}PoisonQueue"")]
-    public void PoisonQueue([QueueTrigger(""myqueue-items"")]string myQueueItem, ILogger log)
-    {{
-        log.LogInformation($""C# Queue trigger function processed: {{myQueueItem}}"");
-    }}
-}}";
-
-        return source;
-    }
-
-    private static string GenerateServiceClass(FunctionInfo functionInfo)
+    private static string GenerateServiceInterface(ServiceInfo functionInfo)
     {
         var source =
 @$"using System.Threading.Tasks;
 
-namespace {functionInfo.ServiceNamespace};
+namespace {functionInfo.Namespace};
 
-public interface {functionInfo.ServiceInterface}
+public interface I{functionInfo.Name}
 {{
     Task HandleAsync();
 }}";
@@ -178,7 +132,7 @@ public interface {functionInfo.ServiceInterface}
         return source;
     }
 
-    private static string GenerateDependencyInjection(List<FunctionInfo> functionsInfo)
+    private static string GenerateDependencyInjection(List<ServiceInfo> functionsInfo)
     {
         var sourceCode = new StringBuilder(5000)
             .Append(
@@ -196,7 +150,7 @@ public static class DependencyInjectionExtension
         foreach (var functionInfo in functionsInfo)
         {
             sourceCode.AppendLine(
-                $@"        builder.Services.AddScoped<{functionInfo.ServiceNamespace}.{functionInfo.ServiceInterface}, {functionInfo.ServiceNamespace}.{functionInfo.ServiceName}>();"
+                $@"        builder.Services.AddScoped<{functionInfo.Namespace}.I{functionInfo.Name}, {functionInfo.Namespace}.{functionInfo.Name}>();"
             );
         }
 

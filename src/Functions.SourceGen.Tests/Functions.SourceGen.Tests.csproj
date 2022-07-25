@@ -16,7 +16,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Functions.SourceGen\Functions.SourceGen.csproj" />
+		<ProjectReference Include="..\Functions.SourceGen\Functions.SourceGen.Functions.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
