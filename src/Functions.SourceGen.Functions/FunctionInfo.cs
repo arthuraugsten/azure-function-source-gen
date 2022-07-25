@@ -1,6 +1,6 @@
 ﻿namespace Functions.SourceGen.Functions;
 
-public readonly struct FunctionInfo
+internal readonly struct FunctionInfo
 {
     public FunctionInfo(string serviceNamespace, string name, string @namespace, string serviceName)
     {

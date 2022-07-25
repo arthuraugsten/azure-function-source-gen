@@ -7,7 +7,7 @@ using System.Text;
 namespace Functions.SourceGen.Services;
 
 [Generator]
-public sealed class ServiceGenerator : IIncrementalGenerator
+internal sealed class ServiceGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {

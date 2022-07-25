@@ -1,5 +1,4 @@
-﻿using Functions.SourceGen.Abstractions;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using System.Collections.Immutable;
@@ -8,7 +7,7 @@ using System.Text;
 namespace Functions.SourceGen.Functions;
 
 [Generator]
-public sealed class FunctionGenerator : GeneratorBase, IIncrementalGenerator
+internal sealed class FunctionGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -22,12 +21,36 @@ public sealed class FunctionGenerator : GeneratorBase, IIncrementalGenerator
         var classDeclarations = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (s, _) => IsSyntaxTargetForGeneration(s), // select classes with attributes
-                transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx, FunctionAttributeGenHelper.FullName) // sect the class with the [FunctionSourceGenAttribute] attribute
+                transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx) // sect the class with the [FunctionSourceGenAttribute] attribute
             ).Where(static m => m is not null)!; // filter out attributed classes that we don't care about
 
         var compilationAndEnums = context.CompilationProvider.Combine(classDeclarations.Collect());
 
         context.RegisterSourceOutput(compilationAndEnums, static (spc, source) => Execute(source.Item1, source.Item2!, spc));
+    }
+
+    private static bool IsSyntaxTargetForGeneration(SyntaxNode node) => node is ClassDeclarationSyntax m && m.AttributeLists.Count > 0;
+
+    private static ClassDeclarationSyntax? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
+    {
+        var classDeclarationSyntax = (ClassDeclarationSyntax)context.Node;
+
+        foreach (var attributeListSyntax in classDeclarationSyntax.AttributeLists)
+        {
+            foreach (var attributeSyntax in attributeListSyntax.Attributes)
+            {
+                if (context.SemanticModel.GetSymbolInfo(attributeSyntax).Symbol is not IMethodSymbol attributeSymbol)
+                    continue;
+
+                var attributeContainingTypeSymbol = attributeSymbol.ContainingType;
+                var fullName = attributeContainingTypeSymbol.ToDisplayString();
+
+                if (fullName == FunctionAttributeGenHelper.FullName)
+                    return classDeclarationSyntax;
+            }
+        }
+
+        return null;
     }
 
     private static void Execute(Compilation compilation, ImmutableArray<ClassDeclarationSyntax> classes, SourceProductionContext context)
